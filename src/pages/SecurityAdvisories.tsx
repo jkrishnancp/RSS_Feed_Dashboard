@@ -4,13 +4,11 @@ import { SecurityFilters } from '../components/security/SecurityFilters';
 import { SecurityStats } from '../components/security/SecurityStats';
 import { AdvisoryList } from '../components/security/AdvisoryList';
 import { AdvisoryDetail } from '../components/security/AdvisoryDetail';
+import { useRSSFeeds } from '../hooks/useRSSFeeds';
 import { Shield } from 'lucide-react';
 
-interface SecurityAdvisoriesProps {
-  articles: Article[];
-}
-
-export function SecurityAdvisories({ articles }: SecurityAdvisoriesProps) {
+export function SecurityAdvisories() {
+  const { articles } = useRSSFeeds();
   const [selectedAdvisory, setSelectedAdvisory] = useState<Article | null>(null);
   const [filters, setFilters] = useState({
     dateRange: 7,
@@ -44,15 +42,17 @@ export function SecurityAdvisories({ articles }: SecurityAdvisoriesProps) {
   });
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Security Advisories</h1>
-        <p className="text-gray-600">Monitor security vulnerabilities and advisories across your feeds</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-100">Security Advisories</h1>
+          <p className="text-slate-400 mt-1">Monitor security vulnerabilities and advisories across your feeds</p>
+        </div>
       </div>
 
       <SecurityStats articles={securityArticles} />
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
           <SecurityFilters 
             filters={filters}
@@ -77,10 +77,10 @@ export function SecurityAdvisories({ articles }: SecurityAdvisoriesProps) {
               onClose={() => setSelectedAdvisory(null)}
             />
           ) : (
-            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-              <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Select an Advisory</h3>
-              <p className="text-gray-600">Choose a security advisory from the list to view details</p>
+            <div className="bg-slate-800 rounded-xl border border-slate-700 p-8 text-center">
+              <Shield className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-slate-100 mb-2">Select an Advisory</h3>
+              <p className="text-slate-400">Choose a security advisory from the list to view details</p>
             </div>
           )}
         </div>

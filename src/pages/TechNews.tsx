@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
-import { Article } from '../types';
 import { NewsFilters } from '../components/news/NewsFilters';
 import { NewsGrid } from '../components/news/NewsGrid';
 import { TrendingTopics } from '../components/news/TrendingTopics';
+import { useRSSFeeds } from '../hooks/useRSSFeeds';
 
-interface TechNewsProps {
-  articles: Article[];
-}
-
-export function TechNews({ articles }: TechNewsProps) {
+export function TechNews() {
+  const { articles } = useRSSFeeds();
   const [filters, setFilters] = useState({
     dateRange: 7,
     category: 'all',
@@ -36,10 +33,12 @@ export function TechNews({ articles }: TechNewsProps) {
   });
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Tech News</h1>
-        <p className="text-gray-600">Stay updated with the latest technology news and trends</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-100">Tech News</h1>
+          <p className="text-slate-400 mt-1">Stay updated with the latest technology news and trends</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

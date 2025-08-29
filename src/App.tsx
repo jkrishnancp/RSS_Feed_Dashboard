@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { MainDashboard } from './pages/MainDashboard';
@@ -9,44 +10,39 @@ import { CyberSecurity } from './pages/CyberSecurity';
 import { UserManagement } from './pages/UserManagement';
 import { AdminRSSManagement } from './pages/AdminRSSManagement';
 import { UserProfile } from './pages/UserProfile';
+import { useRSSFeeds } from './hooks/useRSSFeeds';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('dashboard');
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'dashboard':
-        return <MainDashboard />;
-      case 'security':
-        return <SecurityAdvisories />;
-      case 'tech-news':
-        return <TechNews />;
-      case 'dev-blogs':
-        return <DevBlogs />;
-      case 'cybersecurity':
-        return <CyberSecurity />;
-      case 'users':
-        return <UserManagement />;
-      case 'admin-rss':
-        return <AdminRSSManagement />;
-      case 'profile':
-        return <UserProfile />;
-      default:
-        return <MainDashboard />;
-    }
-  };
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { feeds, loading, error, refreshFeeds } = useRSSFeeds();
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100">
-      <div className="flex">
-        <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
-        <div className="flex-1 flex flex-col">
-          <Header onPageChange={setCurrentPage} />
-          <main className="flex-1 p-6">
-            {renderPage()}
-          </main>
+    <Router>
+      <div className="min-h-screen bg-gray-900 text-gray-100">
+        <div className="flex">
+          <Sidebar 
+            isOpen={sidebarOpen} 
+            onToggle={() => setSidebarOpen(!sidebarOpen)} 
+            feeds={feeds} 
+          />
+          <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
+            <Header onRefresh={refreshFeeds} loading={loading} error={error} />
+            <main className="flex-1 p-6">
+              <Routes>
+                <Route path="/" element={<MainDashboard />} />
+                <Route path="/security" element={<SecurityAdvisories />} />
+                <Route path="/tech-news" element={<TechNews />} />
+                <Route path="/dev-blogs" element={<DevBlogs />} />
+                <Route path="/cybersecurity" element={<CyberSecurity />} />
+                <Route path="/ai-ml" element={<MainDashboard />} />
+                <Route path="/users" element={<UserManagement />} />
+                <Route path="/admin/feeds" element={<AdminRSSManagement />} />
+                <Route path="/profile" element={<UserProfile />} />
+              </Routes>
+            </main>
+          </div>
         </div>
       </div>
-    </div>
+    </Router>
   );
 }

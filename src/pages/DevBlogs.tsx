@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
-import { Article } from '../types';
 import { BlogFilters } from '../components/blogs/BlogFilters';
 import { BlogGrid } from '../components/blogs/BlogGrid';
 import { PopularAuthors } from '../components/blogs/PopularAuthors';
+import { useRSSFeeds } from '../hooks/useRSSFeeds';
 
-interface DevBlogsProps {
-  articles: Article[];
-}
-
-export function DevBlogs({ articles }: DevBlogsProps) {
+export function DevBlogs() {
+  const { articles } = useRSSFeeds();
   const [filters, setFilters] = useState({
     dateRange: 30,
     readStatus: 'all' as const,
@@ -37,10 +34,12 @@ export function DevBlogs({ articles }: DevBlogsProps) {
   });
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Developer Blogs</h1>
-        <p className="text-gray-600">Discover insights and tutorials from the developer community</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-100">Developer Blogs</h1>
+          <p className="text-slate-400 mt-1">Discover insights and tutorials from the developer community</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
