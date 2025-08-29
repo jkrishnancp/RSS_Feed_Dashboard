@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { RSSFeed, Article, FeedCategory, DashboardStats } from '../types';
 import { mockFeeds, mockArticles, mockCategories } from '../data/mockData';
+import { useFeedScheduler } from './useFeedScheduler';
+import { RSSFeedData } from '../utils/rssValidator';
 
 export function useRSSFeeds() {
   const [feeds, setFeeds] = useState<RSSFeed[]>([]);
@@ -8,6 +10,7 @@ export function useRSSFeeds() {
   const [categories, setCategories] = useState<FeedCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [rssFeeds, setRssFeeds] = useState<RSSFeedData[]>([]);
 
   const calculateStats = useCallback((feedList: RSSFeed[], articleList: Article[]): DashboardStats => {
     const now = new Date();
@@ -54,9 +57,35 @@ export function useRSSFeeds() {
     }
   }, []);
 
+  // Handle feed updates from scheduler
+  const handleFeedUpdate = useCallback((feedId: string, feedData?: RSSFeedData) => {
+    if (feedData) {
+      setRssFeeds(prev => 
+        prev.map(feed => feed.id === feedId ? feedData : feed)
+      );
+    }
+  }, []);
+
+  // Initialize scheduler
+  const scheduler = useFeedScheduler(rssFeeds, handleFeedUpdate, {
+    autoStart: true,
+    intervalHours: 3 // Refresh every 3 hours
+  });
+
   const refreshFeeds = useCallback(async () => {
-    await loadFeeds();
-  }, [loadFeeds]);
+    setLoading(true);
+    try {
+      await loadFeeds();
+      // Trigger manual refresh of RSS feeds
+      if (scheduler.manualRefresh) {
+        await scheduler.manualRefresh();
+      }
+    } catch (err) {
+      console.error('Error refreshing feeds:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [loadFeeds, scheduler.manualRefresh]);
 
   useEffect(() => {
     loadFeeds();
@@ -70,5 +99,14 @@ export function useRSSFeeds() {
     error,
     refreshFeeds,
     stats: calculateStats(feeds, articles),
+    // Scheduler properties
+    scheduler: {
+      status: scheduler.status,
+      isRefreshing: scheduler.isRefreshing,
+      error: scheduler.error,
+      manualRefresh: scheduler.manualRefresh,
+      timeSinceLastRefresh: scheduler.timeSinceLastRefresh,
+      clearError: scheduler.clearError
+    }
   };
 }

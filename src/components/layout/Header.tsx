@@ -1,17 +1,47 @@
 import React, { useState } from 'react';
-import { RefreshCw, Bell, Settings, Search, User, LogOut, Users, Rss, ChevronDown } from 'lucide-react';
+import { RefreshCw, Bell, Settings, Search, User, LogOut, Users, Rss, ChevronDown, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+interface SchedulerInfo {
+  status: {
+    isRunning: boolean;
+    feedCount: number;
+    lastRefresh: Date | null;
+    nextRefresh: Date | null;
+    timeUntilRefresh: string;
+    needsRefresh: boolean;
+  };
+  isRefreshing: boolean;
+  error: string | null;
+  manualRefresh: () => Promise<void>;
+  timeSinceLastRefresh: () => string;
+  clearError: () => void;
+}
 
 interface HeaderProps {
   onRefresh: () => void;
   loading: boolean;
   error: string | null;
+  scheduler?: SchedulerInfo;
 }
 
-export function Header({ onRefresh, loading, error }: HeaderProps) {
+export function Header({ onRefresh, loading, error, scheduler }: HeaderProps) {
   const [showAdminDropdown, setShowAdminDropdown] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showSchedulerInfo, setShowSchedulerInfo] = useState(false);
   const navigate = useNavigate();
+
+  const handleRefresh = async () => {
+    if (scheduler?.manualRefresh) {
+      try {
+        await scheduler.manualRefresh();
+      } catch (err) {
+        console.error('Manual refresh failed:', err);
+      }
+    } else {
+      onRefresh();
+    }
+  };
 
   return (
     <header className="bg-gray-800 border-b border-gray-700 px-6 py-4 sticky top-0 z-30">
@@ -28,19 +58,87 @@ export function Header({ onRefresh, loading, error }: HeaderProps) {
         </div>
         
         <div className="flex items-center gap-3">
-          {error && (
+          {/* Scheduler Status */}
+          {scheduler && (
+            <div className="relative">
+              <button
+                onClick={() => setShowSchedulerInfo(!showSchedulerInfo)}
+                className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-gray-100 hover:bg-gray-700 rounded-lg transition-colors"
+                title="RSS Feed Scheduler Status"
+              >
+                <Clock className="w-4 h-4" />
+                {scheduler.status.isRunning ? (
+                  <CheckCircle className="w-3 h-3 text-green-400" />
+                ) : (
+                  <AlertCircle className="w-3 h-3 text-yellow-400" />
+                )}
+                <span className="text-xs">
+                  {scheduler.status.timeUntilRefresh}
+                </span>
+              </button>
+
+              {showSchedulerInfo && (
+                <div className="absolute right-0 mt-2 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50">
+                  <div className="p-4">
+                    <h3 className="text-sm font-semibold text-gray-100 mb-3">RSS Feed Scheduler</h3>
+                    
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Status:</span>
+                        <span className={`font-medium ${scheduler.status.isRunning ? 'text-green-400' : 'text-yellow-400'}`}>
+                          {scheduler.status.isRunning ? 'Running' : 'Stopped'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Feeds Monitored:</span>
+                        <span className="text-gray-100">{scheduler.status.feedCount}</span>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Last Refresh:</span>
+                        <span className="text-gray-100">{scheduler.timeSinceLastRefresh()}</span>
+                      </div>
+                      
+                      {scheduler.status.nextRefresh && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Next Refresh:</span>
+                          <span className="text-gray-100">{scheduler.status.timeUntilRefresh}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {scheduler.error && (
+                      <div className="mt-3 p-2 bg-red-900/20 border border-red-800 rounded text-xs text-red-400">
+                        {scheduler.error}
+                      </div>
+                    )}
+
+                    {scheduler.isRefreshing && (
+                      <div className="mt-3 flex items-center gap-2 text-blue-400 text-xs">
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        <span>Refreshing feeds...</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {(error || scheduler?.error) && (
             <div className="text-red-400 text-sm font-medium bg-red-900/20 px-3 py-1 rounded-lg border border-red-800">
-              Connection Error
+              {error || scheduler?.error || 'Connection Error'}
             </div>
           )}
           
           <button
-            onClick={onRefresh}
-            disabled={loading}
+            onClick={handleRefresh}
+            disabled={loading || scheduler?.isRefreshing}
             className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-blue-400 hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            {loading ? 'Syncing...' : 'Refresh All'}
+            <RefreshCw className={`w-4 h-4 ${(loading || scheduler?.isRefreshing) ? 'animate-spin' : ''}`} />
+            {loading || scheduler?.isRefreshing ? 'Syncing...' : 'Refresh Feeds'}
           </button>
           
           <button className="p-2 text-gray-300 hover:text-gray-100 hover:bg-gray-700 rounded-lg transition-colors relative">

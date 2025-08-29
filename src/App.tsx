@@ -18,7 +18,7 @@ import { useRSSFeeds } from './hooks/useRSSFeeds';
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { feeds, loading, error, refreshFeeds } = useRSSFeeds();
+  const { feeds, loading, error, refreshFeeds, scheduler } = useRSSFeeds();
 
   return (
     <Router>
@@ -30,7 +30,7 @@ export default function App() {
             feeds={feeds} 
           />
           <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
-            <Header onRefresh={refreshFeeds} loading={loading} error={error} />
+            <Header onRefresh={refreshFeeds} loading={loading} error={error} scheduler={scheduler} />
             <main className="flex-1 p-6">
               <Routes>
                 <Route path="/" element={<MainDashboard />} />
