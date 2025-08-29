@@ -62,14 +62,15 @@ A modern, comprehensive RSS feed management and monitoring dashboard built with 
 3. **Start the development server**
    ```bash
    npm run dev
-   ```
-   Using nohup:
-  nohup npm run dev > app.log 2>&1 &
 
-  Using screen:
-  screen -S rss-dashboard
-  npm run dev
-  # Press Ctrl+A, then D to detach
+   Start and expose on LAN (IPv4) — stays in background
+   nohup npm run dev -- --host 0.0.0.0 --port 3443 --strictPort > app.log 2>&1 &
+   
+   Find & kill current Vite (optional)
+   pkill -f "vite" || pkill -f "node.*vite"
+
+   ```
+
 
 
 4. **Open your browser**
