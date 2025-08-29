@@ -9,7 +9,10 @@ import {
   Menu,
   Rss,
   ChevronLeft,
-  Brain
+  Brain,
+  MessageCircle,
+  Building2,
+  Package
 } from 'lucide-react';
 import { RSSFeed } from '../../types';
 
@@ -62,6 +65,27 @@ export function Sidebar({ isOpen, onToggle, feeds }: SidebarProps) {
       icon: Brain, 
       color: 'text-green-400',
       count: feeds.filter(f => f.category.slug === 'ai-ml').length
+    },
+    { 
+      name: 'Social Media', 
+      path: '/social-media', 
+      icon: MessageCircle, 
+      color: 'text-green-400',
+      count: feeds.filter(f => f.category.slug === 'social-media').length
+    },
+    { 
+      name: 'Vendor Blogs', 
+      path: '/vendor-blogs', 
+      icon: Building2, 
+      color: 'text-indigo-400',
+      count: feeds.filter(f => f.category.slug === 'vendor-blogs').length
+    },
+    { 
+      name: 'Uncategorized', 
+      path: '/uncategorized', 
+      icon: Package, 
+      color: 'text-gray-400',
+      count: feeds.filter(f => f.category.slug === 'uncategorized' || !f.category.slug).length
     },
   ];
 

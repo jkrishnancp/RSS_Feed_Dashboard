@@ -3,25 +3,26 @@ import { Article } from '../types';
 import { Pagination } from '../components/common/Pagination';
 import { ArticleDetail } from '../components/common/ArticleDetail';
 import { useRSSFeeds } from '../hooks/useRSSFeeds';
-import { Newspaper, TrendingUp, Eye, Search, Calendar, Filter } from 'lucide-react';
+import { MessageCircle, Users, TrendingUp, Search, Calendar, Filter, Share2 } from 'lucide-react';
 
-export function TechNews() {
+export function SocialMediaFeeds() {
   const { articles } = useRSSFeeds();
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [filters, setFilters] = useState({
     dateRange: 7,
-    category: 'all',
+    platform: 'all',
     readStatus: 'all' as const,
     searchQuery: ''
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
-  const techArticles = articles.filter(article => 
-    article.category.slug === 'tech-news'
+  const socialArticles = articles.filter(article => 
+    article.category.slug === 'social-media' ||
+    article.tags.some(tag => ['twitter', 'linkedin', 'facebook', 'instagram', 'youtube', 'tiktok', 'social'].includes(tag.toLowerCase()))
   );
 
-  const filteredArticles = techArticles.filter(article => {
+  const filteredArticles = socialArticles.filter(article => {
     const now = new Date();
     const articleDate = new Date(article.publishedAt);
     const daysDiff = Math.floor((now.getTime() - articleDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -63,8 +64,8 @@ export function TechNews() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">Tech News</h1>
-          <p className="text-slate-400 mt-1">Stay updated with the latest technology news and trends</p>
+          <h1 className="text-3xl font-bold text-slate-100">Social Media Feeds</h1>
+          <p className="text-slate-400 mt-1">Stay connected with social media trends and updates</p>
         </div>
       </div>
 
@@ -86,7 +87,7 @@ export function TechNews() {
                 type="text"
                 value={filters.searchQuery}
                 onChange={(e) => updateFilter('searchQuery', e.target.value)}
-                placeholder="Search tech news..."
+                placeholder="Search social media..."
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -101,25 +102,25 @@ export function TechNews() {
                 onChange={(e) => updateFilter('dateRange', parseInt(e.target.value))}
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
+                <option value={1}>Last Day</option>
                 <option value={7}>Last Week</option>
                 <option value={14}>Last 2 Weeks</option>
                 <option value={30}>Last Month</option>
-                <option value={90}>Last 3 Months</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Category</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Platform</label>
               <select
-                value={filters.category}
-                onChange={(e) => updateFilter('category', e.target.value)}
+                value={filters.platform}
+                onChange={(e) => updateFilter('platform', e.target.value)}
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">All Categories</option>
-                <option value="ai">AI & Machine Learning</option>
-                <option value="startup">Startups</option>
-                <option value="mobile">Mobile</option>
-                <option value="web">Web Development</option>
+                <option value="all">All Platforms</option>
+                <option value="twitter">Twitter</option>
+                <option value="linkedin">LinkedIn</option>
+                <option value="youtube">YouTube</option>
+                <option value="instagram">Instagram</option>
               </select>
             </div>
 
@@ -130,7 +131,7 @@ export function TechNews() {
                 onChange={(e) => updateFilter('readStatus', e.target.value)}
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">All Articles</option>
+                <option value="all">All Posts</option>
                 <option value="unread">Unread Only</option>
                 <option value="read">Read Only</option>
               </select>
@@ -140,7 +141,7 @@ export function TechNews() {
           <div className="mt-4 pt-4 border-t border-slate-700">
             <div className="text-sm text-slate-400">
               Showing <span className="font-medium text-slate-100">{filteredArticles.length}</span> of{' '}
-              <span className="font-medium text-slate-100">{techArticles.length}</span> articles
+              <span className="font-medium text-slate-100">{socialArticles.length}</span> posts
             </div>
           </div>
         </div>
@@ -161,7 +162,7 @@ export function TechNews() {
                       selectedArticle?.id === article.id ? 'border-blue-200 bg-blue-50' : 'border-gray-100'
                     }`}
                   >
-                    <Newspaper className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" />
+                    <MessageCircle className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900 line-clamp-1">{article.title}</h4>
                       <p className="text-sm text-gray-600 line-clamp-2 mt-1">{article.description}</p>
@@ -171,13 +172,13 @@ export function TechNews() {
                         <span>{new Date(article.publishedAt).toLocaleDateString()}</span>
                         <span>•</span>
                         <span className="flex items-center gap-1">
-                          <Eye className="w-3 h-3" />
-                          {article.readingTime} min read
+                          <Share2 className="w-3 h-3" />
+                          Social Post
                         </span>
-                        {article.tags.slice(0, 2).map((tag) => (
+                        {article.tags.filter(tag => ['twitter', 'linkedin', 'facebook', 'instagram'].includes(tag.toLowerCase())).slice(0, 2).map((tag) => (
                           <React.Fragment key={tag}>
                             <span>•</span>
-                            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
                               {tag}
                             </span>
                           </React.Fragment>
@@ -211,43 +212,43 @@ export function TechNews() {
           </div>
         )}
 
-        {/* Tech Stats - shows when no article is selected */}
+        {/* Social Stats - shows when no article is selected */}
         {!selectedArticle && (
           <div className="xl:col-span-1 space-y-6">
             <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
               <div className="flex items-center gap-3 mb-4">
-                <Newspaper className="w-6 h-6 text-blue-400" />
-                <h3 className="text-lg font-semibold text-slate-100">Latest News</h3>
+                <MessageCircle className="w-6 h-6 text-green-400" />
+                <h3 className="text-lg font-semibold text-slate-100">Today's Posts</h3>
               </div>
               <p className="text-3xl font-bold text-slate-100">
-                {techArticles.filter(a => {
+                {socialArticles.filter(a => {
                   const daysDiff = Math.floor((Date.now() - new Date(a.publishedAt).getTime()) / (1000 * 60 * 60 * 24));
                   return daysDiff <= 1;
                 }).length}
               </p>
-              <p className="text-slate-400 text-sm">Published today</p>
+              <p className="text-slate-400 text-sm">New social posts</p>
             </div>
 
             <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
               <div className="flex items-center gap-3 mb-4">
-                <TrendingUp className="w-6 h-6 text-green-400" />
+                <TrendingUp className="w-6 h-6 text-orange-400" />
                 <h3 className="text-lg font-semibold text-slate-100">Trending</h3>
               </div>
               <p className="text-3xl font-bold text-slate-100">
-                {techArticles.filter(a => !a.isRead).length}
+                {socialArticles.filter(a => !a.isRead).length}
               </p>
-              <p className="text-slate-400 text-sm">Unread articles</p>
+              <p className="text-slate-400 text-sm">Unread posts</p>
             </div>
 
             <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
               <div className="flex items-center gap-3 mb-4">
-                <Eye className="w-6 h-6 text-purple-400" />
-                <h3 className="text-lg font-semibold text-slate-100">Reading Time</h3>
+                <Users className="w-6 h-6 text-purple-400" />
+                <h3 className="text-lg font-semibold text-slate-100">Platforms</h3>
               </div>
               <p className="text-3xl font-bold text-slate-100">
-                {Math.round(techArticles.reduce((sum, a) => sum + a.readingTime, 0) / techArticles.length || 0)}
+                {new Set(socialArticles.flatMap(a => a.tags.filter(tag => ['twitter', 'linkedin', 'facebook', 'instagram', 'youtube'].includes(tag.toLowerCase())))).size}
               </p>
-              <p className="text-slate-400 text-sm">Avg minutes per article</p>
+              <p className="text-slate-400 text-sm">Social platforms</p>
             </div>
           </div>
         )}

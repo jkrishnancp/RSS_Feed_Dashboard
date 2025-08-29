@@ -3,25 +3,26 @@ import { Article } from '../types';
 import { Pagination } from '../components/common/Pagination';
 import { ArticleDetail } from '../components/common/ArticleDetail';
 import { useRSSFeeds } from '../hooks/useRSSFeeds';
-import { Newspaper, TrendingUp, Eye, Search, Calendar, Filter } from 'lucide-react';
+import { Brain, Zap, Cpu, Search, Calendar, Filter } from 'lucide-react';
 
-export function TechNews() {
+export function AIML() {
   const { articles } = useRSSFeeds();
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [filters, setFilters] = useState({
-    dateRange: 7,
-    category: 'all',
+    dateRange: 14,
+    aiType: 'all',
     readStatus: 'all' as const,
     searchQuery: ''
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
-  const techArticles = articles.filter(article => 
-    article.category.slug === 'tech-news'
+  const aimlArticles = articles.filter(article => 
+    article.category.slug === 'ai-ml' ||
+    article.tags.some(tag => ['ai', 'ml', 'machine learning', 'artificial intelligence', 'deep learning', 'neural networks'].includes(tag.toLowerCase()))
   );
 
-  const filteredArticles = techArticles.filter(article => {
+  const filteredArticles = aimlArticles.filter(article => {
     const now = new Date();
     const articleDate = new Date(article.publishedAt);
     const daysDiff = Math.floor((now.getTime() - articleDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -63,8 +64,8 @@ export function TechNews() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">Tech News</h1>
-          <p className="text-slate-400 mt-1">Stay updated with the latest technology news and trends</p>
+          <h1 className="text-3xl font-bold text-slate-100">AI & Machine Learning</h1>
+          <p className="text-slate-400 mt-1">Latest developments in artificial intelligence and machine learning</p>
         </div>
       </div>
 
@@ -86,7 +87,7 @@ export function TechNews() {
                 type="text"
                 value={filters.searchQuery}
                 onChange={(e) => updateFilter('searchQuery', e.target.value)}
-                placeholder="Search tech news..."
+                placeholder="Search AI/ML content..."
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -109,17 +110,17 @@ export function TechNews() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Category</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">AI Type</label>
               <select
-                value={filters.category}
-                onChange={(e) => updateFilter('category', e.target.value)}
+                value={filters.aiType}
+                onChange={(e) => updateFilter('aiType', e.target.value)}
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">All Categories</option>
-                <option value="ai">AI & Machine Learning</option>
-                <option value="startup">Startups</option>
-                <option value="mobile">Mobile</option>
-                <option value="web">Web Development</option>
+                <option value="all">All Types</option>
+                <option value="llm">Large Language Models</option>
+                <option value="computer-vision">Computer Vision</option>
+                <option value="nlp">Natural Language Processing</option>
+                <option value="robotics">Robotics</option>
               </select>
             </div>
 
@@ -140,7 +141,7 @@ export function TechNews() {
           <div className="mt-4 pt-4 border-t border-slate-700">
             <div className="text-sm text-slate-400">
               Showing <span className="font-medium text-slate-100">{filteredArticles.length}</span> of{' '}
-              <span className="font-medium text-slate-100">{techArticles.length}</span> articles
+              <span className="font-medium text-slate-100">{aimlArticles.length}</span> articles
             </div>
           </div>
         </div>
@@ -161,7 +162,7 @@ export function TechNews() {
                       selectedArticle?.id === article.id ? 'border-blue-200 bg-blue-50' : 'border-gray-100'
                     }`}
                   >
-                    <Newspaper className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" />
+                    <Brain className="w-5 h-5 text-indigo-500 mt-1 flex-shrink-0" />
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900 line-clamp-1">{article.title}</h4>
                       <p className="text-sm text-gray-600 line-clamp-2 mt-1">{article.description}</p>
@@ -170,14 +171,11 @@ export function TechNews() {
                         <span>•</span>
                         <span>{new Date(article.publishedAt).toLocaleDateString()}</span>
                         <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Eye className="w-3 h-3" />
-                          {article.readingTime} min read
-                        </span>
-                        {article.tags.slice(0, 2).map((tag) => (
+                        <span>{article.readingTime} min read</span>
+                        {article.tags.filter(tag => ['ai', 'ml', 'deep learning', 'neural networks'].some(aiTag => tag.toLowerCase().includes(aiTag))).slice(0, 2).map((tag) => (
                           <React.Fragment key={tag}>
                             <span>•</span>
-                            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                            <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full font-medium">
                               {tag}
                             </span>
                           </React.Fragment>
@@ -201,6 +199,7 @@ export function TechNews() {
           </div>
         </div>
         
+        
         {/* Article Detail Panel - shows when article is selected */}
         {selectedArticle && (
           <div className="xl:col-span-1">
@@ -211,44 +210,44 @@ export function TechNews() {
           </div>
         )}
 
-        {/* Tech Stats - shows when no article is selected */}
+        {/* AI Stats - shows when no article is selected */}
         {!selectedArticle && (
           <div className="xl:col-span-1 space-y-6">
-            <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Newspaper className="w-6 h-6 text-blue-400" />
-                <h3 className="text-lg font-semibold text-slate-100">Latest News</h3>
-              </div>
-              <p className="text-3xl font-bold text-slate-100">
-                {techArticles.filter(a => {
-                  const daysDiff = Math.floor((Date.now() - new Date(a.publishedAt).getTime()) / (1000 * 60 * 60 * 24));
-                  return daysDiff <= 1;
-                }).length}
-              </p>
-              <p className="text-slate-400 text-sm">Published today</p>
+          <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Brain className="w-6 h-6 text-indigo-400" />
+              <h3 className="text-lg font-semibold text-slate-100">AI Research</h3>
             </div>
+            <p className="text-3xl font-bold text-slate-100">
+              {aimlArticles.filter(a => a.tags.some(tag => tag.toLowerCase().includes('research'))).length}
+            </p>
+            <p className="text-slate-400 text-sm">Research papers</p>
+          </div>
 
-            <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <TrendingUp className="w-6 h-6 text-green-400" />
-                <h3 className="text-lg font-semibold text-slate-100">Trending</h3>
-              </div>
-              <p className="text-3xl font-bold text-slate-100">
-                {techArticles.filter(a => !a.isRead).length}
-              </p>
-              <p className="text-slate-400 text-sm">Unread articles</p>
+          <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Zap className="w-6 h-6 text-yellow-400" />
+              <h3 className="text-lg font-semibold text-slate-100">Breakthroughs</h3>
             </div>
+            <p className="text-3xl font-bold text-slate-100">
+              {aimlArticles.filter(a => {
+                const daysDiff = Math.floor((Date.now() - new Date(a.publishedAt).getTime()) / (1000 * 60 * 60 * 24));
+                return daysDiff <= 7;
+              }).length}
+            </p>
+            <p className="text-slate-400 text-sm">This week</p>
+          </div>
 
-            <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Eye className="w-6 h-6 text-purple-400" />
-                <h3 className="text-lg font-semibold text-slate-100">Reading Time</h3>
-              </div>
-              <p className="text-3xl font-bold text-slate-100">
-                {Math.round(techArticles.reduce((sum, a) => sum + a.readingTime, 0) / techArticles.length || 0)}
-              </p>
-              <p className="text-slate-400 text-sm">Avg minutes per article</p>
+          <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Cpu className="w-6 h-6 text-cyan-400" />
+              <h3 className="text-lg font-semibold text-slate-100">Models</h3>
             </div>
+            <p className="text-3xl font-bold text-slate-100">
+              {aimlArticles.filter(a => a.tags.some(tag => ['model', 'gpt', 'bert', 'transformer'].some(modelTag => tag.toLowerCase().includes(modelTag)))).length}
+            </p>
+            <p className="text-slate-400 text-sm">Model releases</p>
+          </div>
           </div>
         )}
       </div>

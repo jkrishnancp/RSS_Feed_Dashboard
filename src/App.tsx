@@ -7,6 +7,10 @@ import { SecurityAdvisories } from './pages/SecurityAdvisories';
 import { TechNews } from './pages/TechNews';
 import { DevBlogs } from './pages/DevBlogs';
 import { CyberSecurity } from './pages/CyberSecurity';
+import { AIML } from './pages/AIML';
+import { SocialMediaFeeds } from './pages/SocialMediaFeeds';
+import { VendorBlogs } from './pages/VendorBlogs';
+import { Uncategorized } from './pages/Uncategorized';
 import { UserManagement } from './pages/UserManagement';
 import { AdminRSSManagement } from './pages/AdminRSSManagement';
 import { UserProfile } from './pages/UserProfile';
@@ -34,7 +38,10 @@ export default function App() {
                 <Route path="/tech-news" element={<TechNews />} />
                 <Route path="/dev-blogs" element={<DevBlogs />} />
                 <Route path="/cybersecurity" element={<CyberSecurity />} />
-                <Route path="/ai-ml" element={<MainDashboard />} />
+                <Route path="/ai-ml" element={<AIML />} />
+                <Route path="/social-media" element={<SocialMediaFeeds />} />
+                <Route path="/vendor-blogs" element={<VendorBlogs />} />
+                <Route path="/uncategorized" element={<Uncategorized />} />
                 <Route path="/users" element={<UserManagement />} />
                 <Route path="/admin/feeds" element={<AdminRSSManagement />} />
                 <Route path="/profile" element={<UserProfile />} />

@@ -3,25 +3,27 @@ import { Article } from '../types';
 import { Pagination } from '../components/common/Pagination';
 import { ArticleDetail } from '../components/common/ArticleDetail';
 import { useRSSFeeds } from '../hooks/useRSSFeeds';
-import { Newspaper, TrendingUp, Eye, Search, Calendar, Filter } from 'lucide-react';
+import { Package, TrendingUp, FileText, Search, Calendar, Filter } from 'lucide-react';
 
-export function TechNews() {
+export function Uncategorized() {
   const { articles } = useRSSFeeds();
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [filters, setFilters] = useState({
-    dateRange: 7,
-    category: 'all',
+    dateRange: 30,
+    source: 'all',
     readStatus: 'all' as const,
     searchQuery: ''
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
-  const techArticles = articles.filter(article => 
-    article.category.slug === 'tech-news'
+  const uncategorizedArticles = articles.filter(article => 
+    article.category.slug === 'uncategorized' || 
+    !article.category.slug ||
+    article.tags.length === 0
   );
 
-  const filteredArticles = techArticles.filter(article => {
+  const filteredArticles = uncategorizedArticles.filter(article => {
     const now = new Date();
     const articleDate = new Date(article.publishedAt);
     const daysDiff = Math.floor((now.getTime() - articleDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -33,9 +35,14 @@ export function TechNews() {
     const matchesSearch = !filters.searchQuery || 
       article.title.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
       article.description.toLowerCase().includes(filters.searchQuery.toLowerCase());
+    const matchesSource = filters.source === 'all' || 
+      article.feedTitle.toLowerCase().includes(filters.source.toLowerCase());
 
-    return matchesDateRange && matchesReadStatus && matchesSearch;
+    return matchesDateRange && matchesReadStatus && matchesSearch && matchesSource;
   });
+
+  // Get unique sources
+  const sources = Array.from(new Set(uncategorizedArticles.map(a => a.feedTitle))).slice(0, 10);
 
   // Reset to page 1 when filters change
   React.useEffect(() => {
@@ -63,8 +70,8 @@ export function TechNews() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">Tech News</h1>
-          <p className="text-slate-400 mt-1">Stay updated with the latest technology news and trends</p>
+          <h1 className="text-3xl font-bold text-slate-100">Uncategorized</h1>
+          <p className="text-slate-400 mt-1">Mixed content and articles that haven't been categorized yet</p>
         </div>
       </div>
 
@@ -86,7 +93,7 @@ export function TechNews() {
                 type="text"
                 value={filters.searchQuery}
                 onChange={(e) => updateFilter('searchQuery', e.target.value)}
-                placeholder="Search tech news..."
+                placeholder="Search uncategorized..."
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -109,17 +116,16 @@ export function TechNews() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Category</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Source</label>
               <select
-                value={filters.category}
-                onChange={(e) => updateFilter('category', e.target.value)}
+                value={filters.source}
+                onChange={(e) => updateFilter('source', e.target.value)}
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">All Categories</option>
-                <option value="ai">AI & Machine Learning</option>
-                <option value="startup">Startups</option>
-                <option value="mobile">Mobile</option>
-                <option value="web">Web Development</option>
+                <option value="all">All Sources</option>
+                {sources.map((source) => (
+                  <option key={source} value={source}>{source}</option>
+                ))}
               </select>
             </div>
 
@@ -140,7 +146,7 @@ export function TechNews() {
           <div className="mt-4 pt-4 border-t border-slate-700">
             <div className="text-sm text-slate-400">
               Showing <span className="font-medium text-slate-100">{filteredArticles.length}</span> of{' '}
-              <span className="font-medium text-slate-100">{techArticles.length}</span> articles
+              <span className="font-medium text-slate-100">{uncategorizedArticles.length}</span> articles
             </div>
           </div>
         </div>
@@ -161,7 +167,7 @@ export function TechNews() {
                       selectedArticle?.id === article.id ? 'border-blue-200 bg-blue-50' : 'border-gray-100'
                     }`}
                   >
-                    <Newspaper className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" />
+                    <Package className="w-5 h-5 text-gray-500 mt-1 flex-shrink-0" />
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900 line-clamp-1">{article.title}</h4>
                       <p className="text-sm text-gray-600 line-clamp-2 mt-1">{article.description}</p>
@@ -171,13 +177,13 @@ export function TechNews() {
                         <span>{new Date(article.publishedAt).toLocaleDateString()}</span>
                         <span>•</span>
                         <span className="flex items-center gap-1">
-                          <Eye className="w-3 h-3" />
-                          {article.readingTime} min read
+                          <FileText className="w-3 h-3" />
+                          Mixed Content
                         </span>
                         {article.tags.slice(0, 2).map((tag) => (
                           <React.Fragment key={tag}>
                             <span>•</span>
-                            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                            <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full font-medium">
                               {tag}
                             </span>
                           </React.Fragment>
@@ -211,43 +217,43 @@ export function TechNews() {
           </div>
         )}
 
-        {/* Tech Stats - shows when no article is selected */}
+        {/* Mixed Content Stats - shows when no article is selected */}
         {!selectedArticle && (
           <div className="xl:col-span-1 space-y-6">
             <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
               <div className="flex items-center gap-3 mb-4">
-                <Newspaper className="w-6 h-6 text-blue-400" />
-                <h3 className="text-lg font-semibold text-slate-100">Latest News</h3>
+                <Package className="w-6 h-6 text-gray-400" />
+                <h3 className="text-lg font-semibold text-slate-100">Total Items</h3>
               </div>
               <p className="text-3xl font-bold text-slate-100">
-                {techArticles.filter(a => {
+                {uncategorizedArticles.length}
+              </p>
+              <p className="text-slate-400 text-sm">Need categorization</p>
+            </div>
+
+            <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <TrendingUp className="w-6 h-6 text-yellow-400" />
+                <h3 className="text-lg font-semibold text-slate-100">Recent</h3>
+              </div>
+              <p className="text-3xl font-bold text-slate-100">
+                {uncategorizedArticles.filter(a => {
                   const daysDiff = Math.floor((Date.now() - new Date(a.publishedAt).getTime()) / (1000 * 60 * 60 * 24));
-                  return daysDiff <= 1;
+                  return daysDiff <= 7;
                 }).length}
               </p>
-              <p className="text-slate-400 text-sm">Published today</p>
+              <p className="text-slate-400 text-sm">Articles this week</p>
             </div>
 
             <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
               <div className="flex items-center gap-3 mb-4">
-                <TrendingUp className="w-6 h-6 text-green-400" />
-                <h3 className="text-lg font-semibold text-slate-100">Trending</h3>
+                <FileText className="w-6 h-6 text-purple-400" />
+                <h3 className="text-lg font-semibold text-slate-100">Sources</h3>
               </div>
               <p className="text-3xl font-bold text-slate-100">
-                {techArticles.filter(a => !a.isRead).length}
+                {sources.length}
               </p>
-              <p className="text-slate-400 text-sm">Unread articles</p>
-            </div>
-
-            <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Eye className="w-6 h-6 text-purple-400" />
-                <h3 className="text-lg font-semibold text-slate-100">Reading Time</h3>
-              </div>
-              <p className="text-3xl font-bold text-slate-100">
-                {Math.round(techArticles.reduce((sum, a) => sum + a.readingTime, 0) / techArticles.length || 0)}
-              </p>
-              <p className="text-slate-400 text-sm">Avg minutes per article</p>
+              <p className="text-slate-400 text-sm">Different feed sources</p>
             </div>
           </div>
         )}
