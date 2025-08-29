@@ -63,6 +63,14 @@ A modern, comprehensive RSS feed management and monitoring dashboard built with 
    ```bash
    npm run dev
    ```
+   Using nohup:
+  nohup npm run dev > app.log 2>&1 &
+
+  Using screen:
+  screen -S rss-dashboard
+  npm run dev
+  # Press Ctrl+A, then D to detach
+
 
 4. **Open your browser**
    ```
