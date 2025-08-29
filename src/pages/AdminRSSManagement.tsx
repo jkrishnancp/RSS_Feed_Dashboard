@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRSSFeeds } from '../hooks/useRSSFeeds';
 import { Pagination } from '../components/common/Pagination';
-import { Rss, Plus, Settings, BarChart3, Search, Filter } from 'lucide-react';
+import { AddRSSModal } from '../components/rss/AddRSSModal';
+import { BulkImportModal } from '../components/rss/BulkImportModal';
+import { EditableRSSRow } from '../components/rss/EditableRSSRow';
+import { RSSFeedData, monitorRSSHealth, getFeedHealthStats, refreshRSSFeed } from '../utils/rssValidator';
+import { Rss, Plus, Settings, BarChart3, Search, Filter, FileSpreadsheet, AlertTriangle, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 
 export function AdminRSSManagement() {
-  const { feeds, categories } = useRSSFeeds();
+  const { feeds, categories, refreshFeeds } = useRSSFeeds();
   const [filters, setFilters] = useState({
     category: 'all',
     status: 'all',
@@ -13,9 +17,48 @@ export function AdminRSSManagement() {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showBulkImportModal, setShowBulkImportModal] = useState(false);
+  const [rssFeeds, setRssFeeds] = useState<RSSFeedData[]>([]);
+  const [isRefreshingAll, setIsRefreshingAll] = useState(false);
+  const [lastHealthCheck, setLastHealthCheck] = useState<Date>(new Date());
 
-  const filteredFeeds = feeds.filter(feed => {
-    const matchesCategory = filters.category === 'all' || feed.category.id === filters.category;
+  // Monitor RSS feed health every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRssFeeds(prev => {
+        const updated = monitorRSSHealth(prev);
+        setLastHealthCheck(new Date());
+        return updated;
+      });
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Get combined feeds and health stats
+  const combinedFeeds = [...feeds.map(feed => ({
+    id: feed.id,
+    title: feed.title,
+    url: feed.url,
+    category: feed.category.slug,
+    isActive: feed.isActive,
+    health: {
+      isValid: true,
+      status: 'active' as const,
+      lastFetch: new Date(),
+      lastSuccessfulFetch: feed.lastUpdated,
+      errorCount: 0,
+      message: 'Working normally'
+    },
+    lastUpdated: feed.lastUpdated,
+    articleCount: feed.articleCount
+  })), ...rssFeeds];
+  
+  const healthStats = getFeedHealthStats(combinedFeeds);
+
+  const filteredFeeds = combinedFeeds.filter(feed => {
+    const matchesCategory = filters.category === 'all' || feed.category === filters.category;
     const matchesStatus = filters.status === 'all' || 
       (filters.status === 'active' && feed.isActive) ||
       (filters.status === 'inactive' && !feed.isActive);
@@ -30,7 +73,7 @@ export function AdminRSSManagement() {
   const folders = Array.from(new Set(feeds.map(f => f.folder)));
 
   // Reset to page 1 when filters change
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [filters]);
 
@@ -43,8 +86,67 @@ export function AdminRSSManagement() {
     setCurrentPage(1);
   };
 
-  const updateFilter = (key: string, value: any) => {
+  const updateFilter = (key: string, value: string) => {
     setFilters({ ...filters, [key]: value });
+  };
+
+  const handleAddRSS = async (rssData: RSSFeedData) => {
+    try {
+      setRssFeeds(prev => [...prev, rssData]);
+      refreshFeeds();
+    } catch (error) {
+      console.error('Error adding RSS feed:', error);
+    }
+  };
+
+  const handleBulkImport = async (importedFeeds: RSSFeedData[]) => {
+    try {
+      setRssFeeds(prev => [...prev, ...importedFeeds]);
+      refreshFeeds();
+    } catch (error) {
+      console.error('Error bulk importing RSS feeds:', error);
+    }
+  };
+
+  const handleUpdateRSS = (feedId: string, updates: Partial<RSSFeedData>) => {
+    setRssFeeds(prev => 
+      prev.map(feed => 
+        feed.id === feedId ? { ...feed, ...updates, lastUpdated: new Date() } : feed
+      )
+    );
+  };
+
+  const handleDeleteRSS = (feedId: string) => {
+    if (confirm('Are you sure you want to delete this RSS feed?')) {
+      setRssFeeds(prev => prev.filter(feed => feed.id !== feedId));
+    }
+  };
+
+  const handleRefreshRSS = async (feedId: string) => {
+    const feedToRefresh = rssFeeds.find(f => f.id === feedId);
+    if (!feedToRefresh) return;
+    
+    try {
+      const refreshedFeed = await refreshRSSFeed(feedToRefresh);
+      setRssFeeds(prev =>
+        prev.map(feed => feed.id === feedId ? refreshedFeed : feed)
+      );
+    } catch (error) {
+      console.error('Error refreshing RSS feed:', error);
+    }
+  };
+  
+  const handleRefreshAll = async () => {
+    setIsRefreshingAll(true);
+    try {
+      const promises = rssFeeds.map(feed => refreshRSSFeed(feed));
+      const refreshedFeeds = await Promise.all(promises);
+      setRssFeeds(refreshedFeeds);
+    } catch (error) {
+      console.error('Error refreshing all feeds:', error);
+    } finally {
+      setIsRefreshingAll(false);
+    }
   };
 
   return (
@@ -54,10 +156,30 @@ export function AdminRSSManagement() {
           <h1 className="text-3xl font-bold text-slate-100">RSS Feed Management</h1>
           <p className="text-slate-400 mt-1">Manage RSS feeds, categories, and feed organization</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-          <Plus className="w-4 h-4" />
-          Add RSS Feed
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={handleRefreshAll}
+            disabled={isRefreshingAll}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshingAll ? 'animate-spin' : ''}`} />
+            {isRefreshingAll ? 'Refreshing...' : 'Refresh All'}
+          </button>
+          <button 
+            onClick={() => setShowBulkImportModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Import Excel/CSV
+          </button>
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add RSS Feed
+          </button>
+        </div>
       </div>
 
       {/* Filters on top */}
@@ -92,7 +214,7 @@ export function AdminRSSManagement() {
               >
                 <option value="all">All Categories</option>
                 {categories.map(category => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
+                  <option key={category.id} value={category.slug}>{category.name}</option>
                 ))}
               </select>
             </div>
@@ -126,9 +248,28 @@ export function AdminRSSManagement() {
           </div>
 
           <div className="mt-4 pt-4 border-t border-slate-700">
-            <div className="text-sm text-slate-400">
-              Showing <span className="font-medium text-slate-100">{filteredFeeds.length}</span> of{' '}
-              <span className="font-medium text-slate-100">{feeds.length}</span> feeds
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-slate-400">
+                Showing <span className="font-medium text-slate-100">{filteredFeeds.length}</span> of{' '}
+                <span className="font-medium text-slate-100">{combinedFeeds.length}</span> feeds
+              </div>
+              <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-1 text-green-400">
+                  <CheckCircle className="w-3 h-3" />
+                  <span>{healthStats.active} Active</span>
+                </div>
+                <div className="flex items-center gap-1 text-yellow-400">
+                  <AlertTriangle className="w-3 h-3" />
+                  <span>{healthStats.warning} Warning</span>
+                </div>
+                <div className="flex items-center gap-1 text-red-400">
+                  <AlertCircle className="w-3 h-3" />
+                  <span>{healthStats.error} Error</span>
+                </div>
+              </div>
+            </div>
+            <div className="text-xs text-slate-500 mt-1">
+              Last health check: {lastHealthCheck.toLocaleTimeString()}
             </div>
           </div>
         </div>
@@ -146,34 +287,24 @@ export function AdminRSSManagement() {
                     <tr className="border-b border-gray-200">
                       <th className="text-left py-3 px-4 text-gray-700 font-medium">Feed Name</th>
                       <th className="text-left py-3 px-4 text-gray-700 font-medium">Category</th>
-                      <th className="text-left py-3 px-4 text-gray-700 font-medium">Folder</th>
-                      <th className="text-left py-3 px-4 text-gray-700 font-medium">Articles</th>
+                      <th className="text-left py-3 px-4 text-gray-700 font-medium">URL</th>
+                      <th className="text-center py-3 px-4 text-gray-700 font-medium">Articles</th>
                       <th className="text-left py-3 px-4 text-gray-700 font-medium">Status</th>
-                      <th className="text-left py-3 px-4 text-gray-700 font-medium">Last Updated</th>
+                      <th className="text-left py-3 px-4 text-gray-700 font-medium">Health</th>
+                      <th className="text-center py-3 px-4 text-gray-700 font-medium">Last Updated</th>
+                      <th className="text-center py-3 px-4 text-gray-700 font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedFeeds.map((feed) => (
-                      <tr key={feed.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4 text-gray-900">{feed.title}</td>
-                        <td className="py-3 px-4">
-                          <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
-                            {feed.category.name}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">{feed.folder}</td>
-                        <td className="py-3 px-4 text-gray-600">{feed.articleCount}</td>
-                        <td className="py-3 px-4">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            feed.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                          }`}>
-                            {feed.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">
-                          {new Date(feed.lastUpdated).toLocaleDateString()}
-                        </td>
-                      </tr>
+                      <EditableRSSRow
+                        key={feed.id}
+                        feed={feed}
+                        categories={categories}
+                        onUpdate={handleUpdateRSS}
+                        onDelete={handleDeleteRSS}
+                        onRefresh={handleRefreshRSS}
+                      />
                     ))}
                   </tbody>
                 </table>
@@ -198,7 +329,7 @@ export function AdminRSSManagement() {
               <Rss className="w-6 h-6 text-blue-400" />
               <h3 className="text-lg font-semibold text-slate-100">Total Feeds</h3>
             </div>
-            <p className="text-3xl font-bold text-slate-100">{feeds.length}</p>
+            <p className="text-3xl font-bold text-slate-100">{combinedFeeds.length}</p>
             <p className="text-slate-400 text-sm">Active subscriptions</p>
           </div>
 
@@ -214,13 +345,41 @@ export function AdminRSSManagement() {
           <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
             <div className="flex items-center gap-3 mb-4">
               <BarChart3 className="w-6 h-6 text-purple-400" />
-              <h3 className="text-lg font-semibold text-slate-100">Active Feeds</h3>
+              <h3 className="text-lg font-semibold text-slate-100">Health Status</h3>
             </div>
-            <p className="text-3xl font-bold text-slate-100">{feeds.filter(f => f.isActive).length}</p>
-            <p className="text-slate-400 text-sm">Currently updating</p>
+            <p className="text-3xl font-bold text-slate-100">{healthStats.activeFeeds}</p>
+            <p className="text-slate-400 text-sm mb-3">Currently active</p>
+            <div className="flex items-center gap-2 text-xs">
+              <div className="flex items-center gap-1 text-green-400">
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <span>{healthStats.active}</span>
+              </div>
+              <div className="flex items-center gap-1 text-yellow-400">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                <span>{healthStats.warning}</span>
+              </div>
+              <div className="flex items-center gap-1 text-red-400">
+                <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                <span>{healthStats.error}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <AddRSSModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAdd={handleAddRSS}
+        categories={categories}
+      />
+
+      <BulkImportModal
+        isOpen={showBulkImportModal}
+        onClose={() => setShowBulkImportModal(false)}
+        onImport={handleBulkImport}
+      />
     </div>
   );
 }
